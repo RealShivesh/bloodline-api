@@ -24,10 +24,18 @@ export const authLimiter = rateLimit({
   message: { error: 'Too many requests, please try again later.' },
 });
 
+const apiLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 200,
+  standardHeaders: true,
+  legacyHeaders: false,
+  message: { error: 'Too many requests, please try again later.' },
+});
+
 app.use('/api/auth', authLimiter, authRoutes);
-app.use('/api/families', familiesRoutes);
-app.use('/api/families/:familyId/people', peopleRoutes);
-app.use('/api/families/:familyId', relRoutes);
+app.use('/api/families', apiLimiter, familiesRoutes);
+app.use('/api/families/:familyId/people', apiLimiter, peopleRoutes);
+app.use('/api/families/:familyId', apiLimiter, relRoutes);
 
 app.use(errorHandler);
 

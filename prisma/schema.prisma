@@ -1,0 +1,80 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(uuid())
+  username     String   @unique
+  passwordHash String
+  displayName  String
+  createdAt    DateTime @default(now())
+  families     Family[]
+}
+
+model Family {
+  id        String   @id @default(uuid())
+  name      String
+  ownerId   String
+  owner     User     @relation(fields: [ownerId], references: [id])
+  createdAt DateTime @default(now())
+  people    Person[]
+  marriages Marriage[]
+}
+
+model Person {
+  id            String   @id @default(uuid())
+  familyId      String
+  family        Family   @relation(fields: [familyId], references: [id])
+  name          String
+  maritalStatus String   @default("single")
+  notes         String?
+  birthYear     Int?
+  deathYear     Int?
+  createdAt     DateTime @default(now())
+
+  parentRelations    ParentRelation[]   @relation("ChildRelations")
+  parentOf           ParentRelation[]   @relation("ParentRelations")
+  stepParentRelations StepParentRelation[] @relation("StepChildRelations")
+  stepParentOf        StepParentRelation[] @relation("StepParentRelations")
+  marriagesAsA       Marriage[]         @relation("MarriagePersonA")
+  marriagesAsB       Marriage[]         @relation("MarriagePersonB")
+}
+
+model ParentRelation {
+  id       String @id @default(uuid())
+  childId  String
+  parentId String
+  child    Person @relation("ChildRelations", fields: [childId], references: [id])
+  parent   Person @relation("ParentRelations", fields: [parentId], references: [id])
+
+  @@unique([childId, parentId])
+}
+
+model StepParentRelation {
+  id           String @id @default(uuid())
+  childId      String
+  stepParentId String
+  child        Person @relation("StepChildRelations", fields: [childId], references: [id])
+  stepParent   Person @relation("StepParentRelations", fields: [stepParentId], references: [id])
+
+  @@unique([childId, stepParentId])
+}
+
+model Marriage {
+  id        String   @id @default(uuid())
+  familyId  String
+  family    Family   @relation(fields: [familyId], references: [id])
+  personAId String
+  personBId String
+  personA   Person   @relation("MarriagePersonA", fields: [personAId], references: [id])
+  personB   Person   @relation("MarriagePersonB", fields: [personBId], references: [id])
+  status    String   @default("active")
+  startYear Int?
+  endYear   Int?
+  createdAt DateTime @default(now())
+}
